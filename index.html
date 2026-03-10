@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ARIA — Painel Pessoal</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0f;
+  --surface:#131316;
+  --surface2:#1a1a1f;
+  --surface3:#222228;
+  --border:#2a2a32;
+  --border2:#333340;
+  --text:#f0eff5;
+  --muted:#6b6a7a;
+  --muted2:#9998aa;
+  --accent:#7c6af7;
+  --accent2:#a594f9;
+  --accent3:#c4b8ff;
+  --green:#22c55e;
+  --yellow:#f59e0b;
+  --red:#ef4444;
+  --blue:#3b82f6;
+  --cyan:#06b6d4;
+  --r:14px;
+}
+html,body{height:100%;background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--text);-webkit-font-smoothing:antialiased}
+body{display:flex;flex-direction:column;align-items:center;min-height:100vh}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* LAYOUT */
+#app{width:100%;max-width:1200px;height:100vh;display:flex;flex-direction:column;padding:0 20px}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:20px 0 14px;flex-shrink:0;border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--cyan));border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:#fff;letter-spacing:-0.5px}
+.logo-text{font-family:'Syne',sans-serif;font-weight:700;font-size:20px;letter-spacing:-0.5px}
+.logo-sub{font-size:11px;color:var(--muted);font-weight:300;letter-spacing:0.5px;margin-top:-2px}
+.header-right{display:flex;align-items:center;gap:10px}
+.api-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;cursor:pointer;transition:all .2s}
+.api-status:hover{border-color:var(--accent);color:var(--text)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0}
+.status-dot.ok{background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.header-date{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);padding:5px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:20px}
+
+/* NAV TABS */
+nav{display:flex;gap:2px;padding:12px 0 0;flex-shrink:0;overflow-x:auto}
+.tab{padding:8px 18px;border-radius:8px 8px 0 0;font-size:13px;font-weight:500;color:var(--muted2);cursor:pointer;border:1px solid transparent;border-bottom:none;transition:all .2s;white-space:nowrap;background:transparent;position:relative;top:1px}
+.tab:hover{color:var(--text);background:var(--surface2)}
+.tab.active{color:var(--accent3);background:var(--surface);border-color:var(--border);color:var(--accent3)}
+.tab .tab-badge{background:var(--accent);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:6px;font-weight:600}
+
+/* MAIN CONTENT */
+main{flex:1;overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:0 var(--r) var(--r) var(--r);display:flex;flex-direction:column}
+.panel{display:none;height:100%;flex-direction:column;overflow:hidden}
+.panel.active{display:flex}
+
+/* ============ PANEL: ARIA CHAT ============ */
+#panel-aria{display:none}
+#panel-aria.active{display:flex;flex-direction:row;height:100%}
+.chat-sidebar{width:240px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px;gap:12px;overflow-y:auto}
+.chat-sidebar h3{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.new-chat-btn{width:100%;padding:9px 14px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s}
+.new-chat-btn:hover{background:var(--accent2)}
+.memory-info{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted2);line-height:1.5}
+.memory-info b{color:var(--accent3);display:block;margin-bottom:3px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
+.api-config-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.api-config-box label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px}
+.api-input{width:100%;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text);outline:none;transition:border-color .2s}
+.api-input:focus{border-color:var(--accent)}
+.api-save-btn{width:100%;margin-top:7px;padding:7px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s}
+.api-save-btn:hover{border-color:var(--accent);color:var(--accent3)}
+
+.chat-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
+.msg{display:flex;gap:12px;align-items:flex-start;animation:msgIn .3s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{flex-direction:row-reverse}
+.msg-avatar{width:32px;height:32px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-family:'Syne',sans-serif}
+.msg.aria .msg-avatar{background:linear-gradient(135deg,var(--accent),var(--cyan));color:#fff}
+.msg.user .msg-avatar{background:var(--surface3);border:1px solid var(--border2);color:var(--muted2)}
+.msg-bubble{max-width:75%;padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.65;position:relative}
+.msg.aria .msg-bubble{background:var(--surface2);border:1px solid var(--border);border-radius:4px 14px 14px 14px;color:var(--text)}
+.msg.user .msg-bubble{background:var(--accent);color:#fff;border-radius:14px 4px 14px 14px}
+.msg-time{font-size:10px;color:var(--muted);margin-top:5px;font-family:'DM Mono',monospace}
+.msg.user .msg-time{text-align:right}
+.msg-bubble pre{background:var(--surface3);padding:10px;border-radius:8px;font-family:'DM Mono',monospace;font-size:12px;overflow-x:auto;margin:8px 0;border:1px solid var(--border2)}
+.msg-bubble strong{color:var(--accent3)}
+.msg-bubble em{color:var(--muted2)}
+
+.chat-input-area{padding:16px 20px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.chat-toolbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.tool-btn{padding:5px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:12px;color:var(--muted2);cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+.tool-btn:hover{border-color:var(--accent);color:var(--accent3)}
+.chat-input-row{display:flex;gap:10px;align-items:flex-end}
+.chat-textarea{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);resize:none;outline:none;min-height:48px;max-height:160px;transition:border-color .2s;line-height:1.5}
+.chat-textarea:focus{border-color:var(--accent)}
+.chat-textarea::placeholder{color:var(--muted)}
+.send-btn{padding:12px 20px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .2s;flex-shrink:0;display:flex;align-items:center;gap:8px}
+.send-btn:hover{background:var(--accent2);transform:translateY(-1px)}
+.send-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.typing{display:flex;align-items:center;gap:5px;padding:8px 0}
+.typing span{width:7px;height:7px;background:var(--muted);border-radius:50%;animation:bounce .8s infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+/* ============ PANEL: ATENDIMENTOS ============ */
+.panel-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.panel-title{font-family:'Syne',sans-serif;font-weight:700;font-size:18px}
+.panel-title span{color:var(--accent)}
+.btn-primary{padding:8px 18px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:7px}
+.btn-primary:hover{background:var(--accent2)}
+.btn-secondary{padding:8px 18px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--muted2);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent3)}
+
+.panel-body{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:16px}
+
+/* FORM */
+.form-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:14px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-row.three{grid-template-columns:1fr 1fr 1fr}
+.form-row.full{grid-template-columns:1fr}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.7px}
+.field input,.field select,.field textarea{background:var(--surface3);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field select option{background:var(--surface3)}
+.field textarea{resize:vertical;min-height:90px;line-height:1.5}
+.field input::placeholder,.field textarea::placeholder{color:var(--muted)}
+
+/* LISTA DE ATENDIMENTOS */
+.atend-list{display:flex;flex-direction:column;gap:10px}
+.atend-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.atend-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);border-radius:3px 0 0 3px}
+.atend-card:hover{border-color:var(--border2);transform:translateX(2px)}
+.atend-card.urgente::before{background:var(--red)}
+.atend-card.andamento::before{background:var(--yellow)}
+.atend-card.concluido::before{background:var(--green)}
+.atend-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.atend-protocolo{font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);font-weight:500}
+.atend-status{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.atend-status.aberto{background:rgba(124,106,247,.15);color:var(--accent3)}
+.atend-status.andamento{background:rgba(245,158,11,.15);color:var(--yellow)}
+.atend-status.concluido{background:rgba(34,197,94,.15);color:var(--green)}
+.atend-status.urgente{background:rgba(239,68,68,.15);color:var(--red)}
+.atend-nome{font-size:14px;font-weight:500;margin-bottom:3px}
+.atend-desc{font-size:12px;color:var(--muted2);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.atend-meta{display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
+.atend-actions{display:flex;gap:6px;margin-top:10px}
+.act-btn{padding:4px 12px;border-radius:6px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;border:1px solid;transition:all .2s;font-weight:500}
+.act-btn.edit{border-color:var(--border2);color:var(--muted2);background:transparent}
+.act-btn.edit:hover{border-color:var(--accent);color:var(--accent3)}
+.act-btn.del{border-color:rgba(239,68,68,.3);color:var(--red);background:transparent}
+.act-btn.del:hover{background:rgba(239,68,68,.1)}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:6px}
+.stat-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.stat-val.green{color:var(--green)}
+.stat-val.yellow{color:var(--yellow)}
+.stat-val.red{color:var(--red)}
+.stat-val.blue{color:var(--blue)}
+
+/* FILTROS */
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filter-chip{padding:6px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:12px;color:var(--muted2);cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+.filter-chip:hover,.filter-chip.active{border-color:var(--accent);color:var(--accent3);background:rgba(124,106,247,.08)}
+.search-input{flex:1;min-width:200px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color .2s}
+.search-input:focus{border-color:var(--accent)}
+.search-input::placeholder{color:var(--muted)}
+
+/* ============ PANEL: OFÍCIOS ============ */
+.oficio-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.oficio-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;transition:all .2s;position:relative;overflow:hidden}
+.oficio-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.oficio-num{font-family:'DM Mono',monospace;font-size:12px;color:var(--cyan);margin-bottom:6px;font-weight:500}
+.oficio-nome{font-size:14px;font-weight:600;margin-bottom:4px}
+.oficio-proc{font-size:12px;color:var(--muted2);margin-bottom:8px}
+.oficio-date{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
+.oficio-top{display:flex;align-items:flex-start;justify-content:space-between}
+.oficio-counter{font-family:'Syne',sans-serif;font-size:40px;font-weight:800;color:var(--surface3);position:absolute;right:16px;bottom:8px;line-height:1}
+
+/* ============ PANEL: CALCULADORA ============ */
+.calc-wrapper{display:flex;justify-content:center;align-items:flex-start;padding:24px;gap:24px;flex-wrap:wrap;overflow-y:auto;flex:1}
+.calc-container{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:24px;width:320px;flex-shrink:0}
+.calc-display{background:var(--surface3);border:1px solid var(--border2);border-radius:12px;padding:16px 20px;margin-bottom:16px;text-align:right}
+.calc-expr{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);min-height:18px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.calc-result{font-family:'Syne',sans-serif;font-size:36px;font-weight:700;color:var(--text);min-height:44px;word-break:break-all}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.calc-btn{padding:16px 8px;border:1px solid var(--border2);border-radius:10px;font-size:16px;font-family:'Syne',sans-serif;font-weight:600;cursor:pointer;transition:all .15s;background:var(--surface3);color:var(--text)}
+.calc-btn:hover{transform:scale(1.04);border-color:var(--border)}
+.calc-btn:active{transform:scale(0.97)}
+.calc-btn.op{background:rgba(124,106,247,.12);color:var(--accent3);border-color:rgba(124,106,247,.2)}
+.calc-btn.op:hover{background:rgba(124,106,247,.2)}
+.calc-btn.eq{background:var(--accent);color:#fff;border-color:var(--accent)}
+.calc-btn.eq:hover{background:var(--accent2)}
+.calc-btn.clear{background:rgba(239,68,68,.1);color:var(--red);border-color:rgba(239,68,68,.2)}
+.calc-btn.span2{grid-column:span 2}
+.calc-history{flex:1;min-width:280px;max-width:380px}
+.calc-history h3{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:12px;color:var(--muted2)}
+.calc-hist-list{display:flex;flex-direction:column;gap:6px}
+.calc-hist-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;transition:all .2s}
+.calc-hist-item:hover{border-color:var(--accent);color:var(--accent3)}
+.calc-hist-expr{color:var(--muted2)}
+.calc-hist-val{color:var(--text);font-weight:500}
+
+/* ============ PANEL: DEMANDAS ============ */
+.demanda-board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;flex:1;overflow:hidden}
+.demanda-col{display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.col-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;display:flex;align-items:center;gap:7px}
+.col-dot{width:8px;height:8px;border-radius:50%}
+.col-count{font-size:11px;color:var(--muted);background:var(--surface2);padding:2px 8px;border-radius:10px}
+.demanda-list{overflow-y:auto;display:flex;flex-direction:column;gap:8px;flex:1;padding-right:2px}
+.demanda-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .2s}
+.demanda-card:hover{border-color:var(--border2);transform:translateX(2px)}
+.demanda-titulo{font-size:13px;font-weight:500;margin-bottom:4px}
+.demanda-meta{font-size:11px;color:var(--muted);display:flex;justify-content:space-between;margin-top:6px;font-family:'DM Mono',monospace}
+.demanda-tag{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-top:6px;display:inline-block}
+.tag-urgente{background:rgba(239,68,68,.15);color:var(--red)}
+.tag-normal{background:rgba(59,130,246,.15);color:var(--blue)}
+.tag-baixo{background:rgba(107,106,122,.15);color:var(--muted2)}
+.add-demanda-btn{padding:10px;border:1px dashed var(--border2);border-radius:10px;text-align:center;font-size:12px;color:var(--muted);cursor:pointer;transition:all .2s;flex-shrink:0}
+.add-demanda-btn:hover{border-color:var(--accent);color:var(--accent3)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;padding:28px}
+.modal h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:20px}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+
+/* TOAST */
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13px;display:flex;align-items:center;gap:10px;animation:toastIn .3s ease;min-width:240px;max-width:340px}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.toast.success{border-color:rgba(34,197,94,.3)}
+.toast.success .t-icon{color:var(--green)}
+.toast.error{border-color:rgba(239,68,68,.3)}
+.toast.error .t-icon{color:var(--red)}
+.toast.info .t-icon{color:var(--accent)}
+
+/* EMPTY STATE */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px;text-align:center;color:var(--muted);gap:12px;flex:1}
+.empty-icon{font-size:48px;opacity:.3}
+.empty-state p{font-size:13px;max-width:240px;line-height:1.6}
+
+/* SECTION DIVIDER */
+.section-divider{display:flex;align-items:center;gap:10px;margin:4px 0}
+.section-divider span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.7px;white-space:nowrap}
+.section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* RESPONSIVE */
+@media(max-width:700px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .form-row{grid-template-columns:1fr}
+  .form-row.three{grid-template-columns:1fr}
+  .demanda-board{grid-template-columns:1fr}
+  #panel-aria.active{flex-direction:column}
+  .chat-sidebar{width:100%;max-height:180px;border-right:none;border-bottom:1px solid var(--border);flex-direction:row;flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">AR</div>
+      <div>
+        <div class="logo-text">ARIA</div>
+        <div class="logo-sub">Assistente de Registro Inteligente e Autônomo</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="api-status" onclick="openApiConfig()" id="apiStatusEl">
+        <div class="status-dot" id="apiDot"></div>
+        <span id="apiStatusText">Configurar API</span>
+      </div>
+      <div class="header-date" id="headerDate"></div>
+    </div>
+  </header>
+
+  <nav>
+    <div class="tab active" onclick="switchTab('aria')" id="tab-aria">🤖 Aria IA</div>
+    <div class="tab" onclick="switchTab('atendimentos')" id="tab-atendimentos">📋 Atendimentos <span class="tab-badge" id="badge-atend">0</span></div>
+    <div class="tab" onclick="switchTab('oficios')" id="tab-oficios">📄 Ofícios <span class="tab-badge" id="badge-ofic">0</span></div>
+    <div class="tab" onclick="switchTab('demandas')" id="tab-demandas">📌 Demandas</div>
+    <div class="tab" onclick="switchTab('calculadora')" id="tab-calculadora">🔢 Calculadora</div>
+  </nav>
+
+  <main>
+
+    <!-- ===== ARIA CHAT ===== -->
+    <div class="panel active" id="panel-aria">
+      <div class="chat-sidebar">
+        <button class="new-chat-btn" onclick="newChat()">＋ Nova Conversa</button>
+        <div>
+          <h3>Memória</h3>
+          <div class="memory-info">
+            <b>💾 Contexto Salvo</b>
+            <span id="memoryInfo">Sem memória registrada ainda.</span>
+          </div>
+        </div>
+        <div>
+          <h3>Config. API</h3>
+          <div class="api-config-box">
+            <label>Chave Google AI</label>
+            <input class="api-input" type="password" id="apiKeyInput" placeholder="AIza..."/>
+            <button class="api-save-btn" onclick="saveApiKey()">💾 Salvar Chave</button>
+          </div>
+        </div>
+        <div>
+          <h3>Atalhos</h3>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div class="tool-btn" onclick="insertPrompt('Resumir atendimentos de hoje')">📊 Resumo do dia</div>
+            <div class="tool-btn" onclick="insertPrompt('Quantos ofícios registrei este mês?')">📄 Contar ofícios</div>
+            <div class="tool-btn" onclick="insertPrompt('Quais demandas estão urgentes?')">🔴 Ver urgentes</div>
+            <div class="tool-btn" onclick="insertPrompt('Me ajuda a redigir um relatório de atendimento')">✍️ Redigir relatório</div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-main">
+        <div class="chat-messages" id="chatMessages">
+          <div class="msg aria">
+            <div class="msg-avatar">AR</div>
+            <div>
+              <div class="msg-bubble">Olá! Sou a <strong>ARIA</strong>, sua assistente pessoal de gestão. Posso te ajudar a registrar atendimentos, organizar ofícios, gerenciar demandas e muito mais.<br><br>Para usar o chat com IA, configure sua chave da <strong>Google AI Studio</strong> no painel ao lado. Sua chave fica salva apenas no seu navegador! 🔐</div>
+              <div class="msg-time" id="firstMsgTime"></div>
+            </div>
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <div class="chat-toolbar">
+            <div class="tool-btn" onclick="insertPrompt('Registre um atendimento: ')">📝 Registrar</div>
+            <div class="tool-btn" onclick="insertPrompt('Analise minha situação atual e dê sugestões')">💡 Analisar</div>
+            <div class="tool-btn" onclick="insertPrompt('Gere um relatório completo de hoje')">📊 Relatório</div>
+            <div class="tool-btn" onclick="clearChat()">🗑️ Limpar</div>
+          </div>
+          <div class="chat-input-row">
+            <textarea class="chat-textarea" id="chatInput" placeholder="Digite uma mensagem para a ARIA..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+              <span>Enviar</span> ➤
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ATENDIMENTOS ===== -->
+    <div class="panel" id="panel-atendimentos">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Registro de <span>Atendimentos</span></div>
+        </div>
+        <button class="btn-primary" onclick="openNovoAtendimento()">＋ Novo Atendimento</button>
+      </div>
+      <div class="panel-body">
+        <div class="stats-row" id="atendStats">
+          <div class="stat-card"><div class="stat-label">Total</div><div class="stat-val blue" id="st-total">0</div><div class="stat-sub">atendimentos</div></div>
+          <div class="stat-card"><div class="stat-label">Abertos</div><div class="stat-val" id="st-abertos">0</div><div class="stat-sub">em aberto</div></div>
+          <div class="stat-card"><div class="stat-label">Concluídos</div><div class="stat-val green" id="st-concluidos">0</div><div class="stat-sub">finalizados</div></div>
+          <div class="stat-card"><div class="stat-label">Urgentes</div><div class="stat-val red" id="st-urgentes">0</div><div class="stat-sub">prioridade alta</div></div>
+        </div>
+        <div class="filter-row">
+          <input class="search-input" type="text" placeholder="🔍 Buscar atendimentos..." id="atendSearch" oninput="renderAtendimentos()"/>
+          <div class="filter-chip active" onclick="setFilter('todos')" id="f-todos">Todos</div>
+          <div class="filter-chip" onclick="setFilter('aberto')" id="f-aberto">Abertos</div>
+          <div class="filter-chip" onclick="setFilter('andamento')" id="f-andamento">Em Andamento</div>
+          <div class="filter-chip" onclick="setFilter('concluido')" id="f-concluido">Concluídos</div>
+          <div class="filter-chip" onclick="setFilter('urgente')" id="f-urgente">Urgentes</div>
+        </div>
+        <div class="atend-list" id="atendList">
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <strong>Sem atendimentos</strong>
+            <p>Clique em "Novo Atendimento" para registrar o primeiro.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== OFÍCIOS ===== -->
+    <div class="panel" id="panel-oficios">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Registro de <span>Ofícios</span></div>
+        </div>
+        <button class="btn-primary" onclick="openNovoOficio()">＋ Novo Ofício</button>
+      </div>
+      <div class="panel-body">
+        <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
+          <div class="stat-card"><div class="stat-label">Total de Ofícios</div><div class="stat-val blue" id="of-total">0</div></div>
+          <div class="stat-card"><div class="stat-label">Este Mês</div><div class="stat-val" id="of-mes">0</div></div>
+          <div class="stat-card"><div class="stat-label">Hoje</div><div class="stat-val green" id="of-hoje">0</div></div>
+        </div>
+        <div class="filter-row">
+          <input class="search-input" type="text" placeholder="🔍 Buscar ofícios por nome ou processo..." id="oficioSearch" oninput="renderOficios()"/>
+        </div>
+        <div class="oficio-grid" id="oficioGrid">
+          <div class="empty-state" style="grid-column:1/-1">
+            <div class="empty-icon">📄</div>
+            <strong>Sem ofícios</strong>
+            <p>Registre o primeiro ofício clicando em "Novo Ofício".</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== DEMANDAS ===== -->
+    <div class="panel" id="panel-demandas">
+      <div class="panel-header">
+        <div class="panel-title">Painel de <span>Demandas</span></div>
+        <button class="btn-primary" onclick="openNovaDemanda()">＋ Nova Demanda</button>
+      </div>
+      <div class="panel-body" style="flex-direction:row;gap:16px;overflow:hidden">
+        <div class="demanda-board" id="demandaBoard" style="width:100%">
+          <div class="demanda-col">
+            <div class="col-header">
+              <div class="col-title"><div class="col-dot" style="background:var(--muted)"></div>A Fazer</div>
+              <div class="col-count" id="count-afazer">0</div>
+            </div>
+            <div class="demanda-list" id="col-afazer"></div>
+            <div class="add-demanda-btn" onclick="openNovaDemanda('afazer')">＋ Adicionar</div>
+          </div>
+          <div class="demanda-col">
+            <div class="col-header">
+              <div class="col-title"><div class="col-dot" style="background:var(--yellow)"></div>Em Andamento</div>
+              <div class="col-count" id="count-andamento">0</div>
+            </div>
+            <div class="demanda-list" id="col-andamento"></div>
+            <div class="add-demanda-btn" onclick="openNovaDemanda('andamento')">＋ Adicionar</div>
+          </div>
+          <div class="demanda-col">
+            <div class="col-header">
+              <div class="col-title"><div class="col-dot" style="background:var(--green)"></div>Concluído</div>
+              <div class="col-count" id="count-concluido">0</div>
+            </div>
+            <div class="demanda-list" id="col-concluido"></div>
+            <div class="add-demanda-btn" onclick="openNovaDemanda('concluido')">＋ Adicionar</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CALCULADORA ===== -->
+    <div class="panel" id="panel-calculadora">
+      <div class="panel-header">
+        <div class="panel-title">Calculadora <span>Interativa</span></div>
+      </div>
+      <div class="calc-wrapper">
+        <div class="calc-container">
+          <div class="calc-display">
+            <div class="calc-expr" id="calcExpr">&nbsp;</div>
+            <div class="calc-result" id="calcResult">0</div>
+          </div>
+          <div class="calc-grid">
+            <button class="calc-btn clear" onclick="calcClear()">AC</button>
+            <button class="calc-btn op" onclick="calcSign()">±</button>
+            <button class="calc-btn op" onclick="calcPercent()">%</button>
+            <button class="calc-btn op" onclick="calcOp('/')">÷</button>
+
+            <button class="calc-btn" onclick="calcNum('7')">7</button>
+            <button class="calc-btn" onclick="calcNum('8')">8</button>
+            <button class="calc-btn" onclick="calcNum('9')">9</button>
+            <button class="calc-btn op" onclick="calcOp('*')">×</button>
+
+            <button class="calc-btn" onclick="calcNum('4')">4</button>
+            <button class="calc-btn" onclick="calcNum('5')">5</button>
+            <button class="calc-btn" onclick="calcNum('6')">6</button>
+            <button class="calc-btn op" onclick="calcOp('-')">−</button>
+
+            <button class="calc-btn" onclick="calcNum('1')">1</button>
+            <button class="calc-btn" onclick="calcNum('2')">2</button>
+            <button class="calc-btn" onclick="calcNum('3')">3</button>
+            <button class="calc-btn op" onclick="calcOp('+')">＋</button>
+
+            <button class="calc-btn span2" onclick="calcNum('0')">0</button>
+            <button class="calc-btn" onclick="calcDot()">.</button>
+            <button class="calc-btn eq" onclick="calcEquals()">=</button>
+          </div>
+        </div>
+        <div class="calc-history">
+          <h3>Histórico de Cálculos</h3>
+          <div class="calc-hist-list" id="calcHistList">
+            <div style="font-size:12px;color:var(--muted);text-align:center;padding:20px 0">Nenhum cálculo realizado</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL: Novo Atendimento -->
+<div class="modal-overlay" id="modalAtend">
+  <div class="modal">
+    <h2>📋 Registrar Atendimento</h2>
+    <div class="form-card" style="background:transparent;border:none;padding:0;gap:14px">
+      <div class="form-row three">
+        <div class="field">
+          <label>Protocolo</label>
+          <input type="text" id="a-protocolo" placeholder="Auto-gerado" readonly style="opacity:.7"/>
+        </div>
+        <div class="field">
+          <label>Data</label>
+          <input type="date" id="a-data"/>
+        </div>
+        <div class="field">
+          <label>Hora</label>
+          <input type="time" id="a-hora"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Nome do Requerente</label>
+          <input type="text" id="a-nome" placeholder="Nome completo"/>
+        </div>
+        <div class="field">
+          <label>CPF / Documento</label>
+          <input type="text" id="a-cpf" placeholder="000.000.000-00"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Tipo de Atendimento</label>
+          <select id="a-tipo">
+            <option value="">Selecionar...</option>
+            <option>Solicitação de Documento</option>
+            <option>Reclamação</option>
+            <option>Informação</option>
+            <option>Recurso</option>
+            <option>Requerimento</option>
+            <option>Protocolo</option>
+            <option>Outro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select id="a-status">
+            <option value="aberto">Aberto</option>
+            <option value="andamento">Em Andamento</option>
+            <option value="concluido">Concluído</option>
+            <option value="urgente">Urgente</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Descrição / Relato do Atendimento</label>
+        <textarea id="a-desc" placeholder="Descreva detalhadamente o atendimento, pedido ou situação relatada..." style="min-height:120px"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Número do Processo</label>
+          <input type="text" id="a-processo" placeholder="0000000-00.0000.0.00.0000"/>
+        </div>
+        <div class="field">
+          <label>Responsável</label>
+          <input type="text" id="a-responsavel" placeholder="Seu nome"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Observações</label>
+        <textarea id="a-obs" placeholder="Informações adicionais, encaminhamentos, etc."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modalAtend')">Cancelar</button>
+      <button class="btn-primary" onclick="salvarAtendimento()">💾 Salvar Atendimento</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Novo Ofício -->
+<div class="modal-overlay" id="modalOficio">
+  <div class="modal">
+    <h2>📄 Registrar Ofício</h2>
+    <div class="form-card" style="background:transparent;border:none;padding:0;gap:14px">
+      <div class="form-row three">
+        <div class="field">
+          <label>Número do Ofício</label>
+          <input type="text" id="o-numero" placeholder="Ofício nº"/>
+        </div>
+        <div class="field">
+          <label>Data</label>
+          <input type="date" id="o-data"/>
+        </div>
+        <div class="field">
+          <label>Hora</label>
+          <input type="time" id="o-hora"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Nome / Destinatário</label>
+        <input type="text" id="o-nome" placeholder="Nome do destinatário ou assunto"/>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Número do Processo</label>
+          <input type="text" id="o-processo" placeholder="0000000-00.0000.0.00.0000"/>
+        </div>
+        <div class="field">
+          <label>Tipo</label>
+          <select id="o-tipo">
+            <option>Ofício</option>
+            <option>Ofício Circular</option>
+            <option>Ofício-Requisição</option>
+            <option>Memorando</option>
+            <option>Despacho</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Assunto / Descrição</label>
+        <textarea id="o-desc" placeholder="Descreva o conteúdo ou objetivo do ofício..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modalOficio')">Cancelar</button>
+      <button class="btn-primary" onclick="salvarOficio()">💾 Salvar Ofício</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nova Demanda -->
+<div class="modal-overlay" id="modalDemanda">
+  <div class="modal">
+    <h2>📌 Nova Demanda</h2>
+    <div class="form-card" style="background:transparent;border:none;padding:0;gap:14px">
+      <div class="field">
+        <label>Título da Demanda</label>
+        <input type="text" id="d-titulo" placeholder="Descreva brevemente a demanda"/>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Prioridade</label>
+          <select id="d-prioridade">
+            <option value="normal">Normal</option>
+            <option value="urgente">Urgente</option>
+            <option value="baixo">Baixa</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Coluna</label>
+          <select id="d-coluna">
+            <option value="afazer">A Fazer</option>
+            <option value="andamento">Em Andamento</option>
+            <option value="concluido">Concluído</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Prazo</label>
+        <input type="date" id="d-prazo"/>
+      </div>
+      <div class="field">
+        <label>Descrição</label>
+        <textarea id="d-desc" placeholder="Detalhes da demanda..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modalDemanda')">Cancelar</button>
+      <button class="btn-primary" onclick="salvarDemanda()">💾 Salvar Demanda</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ============================================================
+// STORAGE HELPERS
+// ============================================================
+const KEYS = {atendimentos:'aria_atendimentos',oficios:'aria_oficios',demandas:'aria_demandas',apiKey:'aria_api_key',memory:'aria_memory',calcHist:'aria_calc_hist'};
+const load = k => { try { return JSON.parse(localStorage.getItem(k)||'null') } catch(e) { return null } };
+const save = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+
+// DATA
+let atendimentos = load(KEYS.atendimentos) || [];
+let oficios = load(KEYS.oficios) || [];
+let demandas = load(KEYS.demandas) || [];
+let calcHistory = load(KEYS.calcHist) || [];
+let chatHistory = [];
+let atendFilter = 'todos';
+let currentAtendId = null;
+let currentOficioId = null;
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  updateDate();
+  setInterval(updateDate, 60000);
+  document.getElementById('firstMsgTime').textContent = now();
+  checkApiKey();
+  renderAtendimentos();
+  renderOficios();
+  renderDemandas();
+  renderCalcHist();
+  updateBadges();
+  loadMemoryInfo();
+});
+
+function updateDate() {
+  const d = new Date();
+  const opts = {weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'};
+  document.getElementById('headerDate').textContent = d.toLocaleDateString('pt-BR',opts) + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+
+function now() {
+  return new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+function nowFull() {
+  return new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+function today() {
+  return new Date().toISOString().slice(0,10);
+}
+function todayTime() {
+  return new Date().toTimeString().slice(0,5);
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+  document.getElementById('tab-'+tab).classList.add('active');
+  const panel = document.getElementById('panel-'+tab);
+  panel.style.display = 'flex';
+  panel.classList.add('active');
+  if(tab === 'atendimentos') renderAtendimentos();
+  if(tab === 'oficios') renderOficios();
+  if(tab === 'demandas') renderDemandas();
+}
+
+// ============================================================
+// API KEY & STATUS
+// ============================================================
+function checkApiKey() {
+  const key = load(KEYS.apiKey);
+  if(key) {
+    document.getElementById('apiDot').classList.add('ok');
+    document.getElementById('apiStatusText').textContent = 'API Conectada';
+    document.getElementById('apiKeyInput').value = key;
+  }
+}
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if(!key) { toast('Digite uma chave válida','error'); return; }
+  save(KEYS.apiKey, key);
+  document.getElementById('apiDot').classList.add('ok');
+  document.getElementById('apiStatusText').textContent = 'API Conectada';
+  toast('Chave salva com sucesso! 🔐','success');
+}
+function openApiConfig() {
+  switchTab('aria');
+}
+
+// ============================================================
+// MEMORY
+// ============================================================
+function buildContext() {
+  const a = atendimentos.slice(-10);
+  const o = oficios.slice(-5);
+  const d = demandas.filter(x=>x.coluna!=='concluido').slice(-8);
+  return `DADOS DO SISTEMA ARIA:
+Atendimentos recentes (${a.length}): ${a.map(x=>`[${x.protocolo}] ${x.nome} - ${x.tipo} - ${x.status} - ${x.data}`).join(' | ')}
+Ofícios recentes (${o.length}): ${o.map(x=>`[${x.numero}] ${x.nome} - ${x.processo}`).join(' | ')}
+Demandas ativas (${d.length}): ${d.map(x=>`[${x.coluna.toUpperCase()}] ${x.titulo} - ${x.prioridade}`).join(' | ')}
+Total: ${atendimentos.length} atendimentos, ${oficios.length} ofícios, ${demandas.length} demandas.`;
+}
+function loadMemoryInfo() {
+  const total = atendimentos.length + oficios.length + demandas.length;
+  document.getElementById('memoryInfo').textContent = total > 0
+    ? `${atendimentos.length} atendimentos, ${oficios.length} ofícios e ${demandas.length} demandas carregados.`
+    : 'Sem dados registrados ainda.';
+}
+
+// ============================================================
+// CHAT / IA
+// ============================================================
+function handleKey(e) {
+  if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+}
+function insertPrompt(text) {
+  const inp = document.getElementById('chatInput');
+  inp.value = text;
+  inp.focus();
+  autoResize(inp);
+}
+function clearChat() {
+  chatHistory = [];
+  document.getElementById('chatMessages').innerHTML = `<div class="msg aria"><div class="msg-avatar">AR</div><div><div class="msg-bubble">Conversa reiniciada. Como posso te ajudar?</div><div class="msg-time">${now()}</div></div></div>`;
+}
+function newChat() { clearChat(); }
+
+async function sendMessage() {
+  const inp = document.getElementById('chatInput');
+  const text = inp.value.trim();
+  if(!text) return;
+  const key = load(KEYS.apiKey);
+  if(!key) { toast('Configure sua chave da Google AI Studio primeiro!','error'); return; }
+
+  addMsg('user', text);
+  inp.value = '';
+  inp.style.height = 'auto';
+
+  const sendBtn = document.getElementById('sendBtn');
+  sendBtn.disabled = true;
+
+  const typingEl = addTyping();
+
+  // Build messages
+  const systemCtx = buildContext();
+  chatHistory.push({role:'user', parts:[{text}]});
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        systemInstruction:{parts:[{text:`Você é a ARIA, uma assistente pessoal inteligente de gestão. Você fala sempre em português brasileiro de forma profissional mas amigável. Você tem acesso aos dados do usuário: ${systemCtx}. Responda de forma clara, objetiva e útil. Quando o usuário pedir resumos ou relatórios, use os dados reais fornecidos. Mantenha respostas concisas mas completas.`}]},
+        contents: chatHistory,
+        generationConfig:{temperature:0.7,maxOutputTokens:1500}
+      })
+    });
+    const data = await res.json();
+    typingEl.remove();
+    if(data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      const reply = data.candidates[0].content.parts[0].text;
+      chatHistory.push({role:'model', parts:[{text:reply}]});
+      addMsg('aria', reply);
+      // Keep history manageable
+      if(chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+    } else {
+      addMsg('aria', '⚠️ Não consegui obter uma resposta. Verifique sua chave de API.');
+    }
+  } catch(e) {
+    typingEl.remove();
+    addMsg('aria', '⚠️ Erro de conexão. Verifique sua chave de API e conexão com a internet.');
+  }
+  sendBtn.disabled = false;
+}
+
+function addMsg(role, text) {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const formatted = text
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/`([^`]+)`/g,'<code style="background:var(--surface3);padding:1px 5px;border-radius:4px;font-family:DM Mono;font-size:12px">$1</code>')
+    .replace(/\n/g,'<br>');
+  div.innerHTML = `<div class="msg-avatar">${role==='aria'?'AR':'EU'}</div><div><div class="msg-bubble">${formatted}</div><div class="msg-time">${now()}</div></div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+function addTyping() {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'msg aria';
+  div.innerHTML = `<div class="msg-avatar">AR</div><div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div></div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+// ============================================================
+// ATENDIMENTOS
+// ============================================================
+function genProtocolo() {
+  const d = new Date();
+  return `AT-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${String(atendimentos.length+1).padStart(4,'0')}`;
+}
+function openNovoAtendimento(id=null) {
+  currentAtendId = id;
+  if(id) {
+    const a = atendimentos.find(x=>x.id===id);
+    document.getElementById('a-protocolo').value = a.protocolo;
+    document.getElementById('a-data').value = a.data;
+    document.getElementById('a-hora').value = a.hora;
+    document.getElementById('a-nome').value = a.nome;
+    document.getElementById('a-cpf').value = a.cpf||'';
+    document.getElementById('a-tipo').value = a.tipo||'';
+    document.getElementById('a-status').value = a.status;
+    document.getElementById('a-desc').value = a.desc||'';
+    document.getElementById('a-processo').value = a.processo||'';
+    document.getElementById('a-responsavel').value = a.responsavel||'';
+    document.getElementById('a-obs').value = a.obs||'';
+  } else {
+    document.getElementById('a-protocolo').value = genProtocolo();
+    document.getElementById('a-data').value = today();
+    document.getElementById('a-hora').value = todayTime();
+    document.getElementById('a-nome').value = '';
+    document.getElementById('a-cpf').value = '';
+    document.getElementById('a-tipo').value = '';
+    document.getElementById('a-status').value = 'aberto';
+    document.getElementById('a-desc').value = '';
+    document.getElementById('a-processo').value = '';
+    document.getElementById('a-responsavel').value = '';
+    document.getElementById('a-obs').value = '';
+  }
+  document.getElementById('modalAtend').classList.add('open');
+}
+function salvarAtendimento() {
+  const nome = document.getElementById('a-nome').value.trim();
+  if(!nome) { toast('Informe o nome do requerente','error'); return; }
+  const obj = {
+    id: currentAtendId || Date.now(),
+    protocolo: document.getElementById('a-protocolo').value,
+    data: document.getElementById('a-data').value,
+    hora: document.getElementById('a-hora').value,
+    nome, cpf: document.getElementById('a-cpf').value,
+    tipo: document.getElementById('a-tipo').value,
+    status: document.getElementById('a-status').value,
+    desc: document.getElementById('a-desc').value,
+    processo: document.getElementById('a-processo').value,
+    responsavel: document.getElementById('a-responsavel').value,
+    obs: document.getElementById('a-obs').value,
+    criadoEm: currentAtendId ? atendimentos.find(x=>x.id===currentAtendId)?.criadoEm : nowFull()
+  };
+  if(currentAtendId) {
+    const idx = atendimentos.findIndex(x=>x.id===currentAtendId);
+    atendimentos[idx] = obj;
+    toast('Atendimento atualizado!','success');
+  } else {
+    atendimentos.unshift(obj);
+    toast('Atendimento registrado!','success');
+  }
+  save(KEYS.atendimentos, atendimentos);
+  closeModal('modalAtend');
+  renderAtendimentos();
+  updateBadges();
+  loadMemoryInfo();
+}
+function deleteAtendimento(id) {
+  if(!confirm('Excluir este atendimento?')) return;
+  atendimentos = atendimentos.filter(x=>x.id!==id);
+  save(KEYS.atendimentos, atendimentos);
+  renderAtendimentos();
+  updateBadges();
+  toast('Excluído','info');
+}
+function setFilter(f) {
+  atendFilter = f;
+  document.querySelectorAll('[id^="f-"]').forEach(el => el.classList.remove('active'));
+  document.getElementById('f-'+f).classList.add('active');
+  renderAtendimentos();
+}
+function renderAtendimentos() {
+  const search = (document.getElementById('atendSearch')?.value||'').toLowerCase();
+  let list = atendimentos;
+  if(atendFilter !== 'todos') list = list.filter(a => a.status === atendFilter);
+  if(search) list = list.filter(a => a.nome?.toLowerCase().includes(search) || a.protocolo?.toLowerCase().includes(search) || a.desc?.toLowerCase().includes(search));
+
+  // Stats
+  document.getElementById('st-total').textContent = atendimentos.length;
+  document.getElementById('st-abertos').textContent = atendimentos.filter(a=>a.status==='aberto').length;
+  document.getElementById('st-concluidos').textContent = atendimentos.filter(a=>a.status==='concluido').length;
+  document.getElementById('st-urgentes').textContent = atendimentos.filter(a=>a.status==='urgente').length;
+
+  const cont = document.getElementById('atendList');
+  if(!list.length) {
+    cont.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><strong>Nenhum resultado</strong><p>Tente outro filtro ou busca.</p></div>`;
+    return;
+  }
+  cont.innerHTML = list.map(a => `
+    <div class="atend-card ${a.status}">
+      <div class="atend-top">
+        <div class="atend-protocolo">${a.protocolo}</div>
+        <div class="atend-status ${a.status}">${labelStatus(a.status)}</div>
+      </div>
+      <div class="atend-nome">${a.nome}</div>
+      <div class="atend-desc">${a.desc || a.tipo || 'Sem descrição'}</div>
+      <div class="atend-meta">
+        <span>📅 ${formatDate(a.data)} ${a.hora}</span>
+        ${a.processo ? `<span>📁 ${a.processo}</span>` : ''}
+        ${a.responsavel ? `<span>👤 ${a.responsavel}</span>` : ''}
+      </div>
+      <div class="atend-actions">
+        <button class="act-btn edit" onclick="openNovoAtendimento(${a.id})">✏️ Editar</button>
+        <button class="act-btn del" onclick="deleteAtendimento(${a.id})">🗑️ Excluir</button>
+      </div>
+    </div>`).join('');
+}
+function labelStatus(s) {
+  return {aberto:'Aberto',andamento:'Em Andamento',concluido:'Concluído',urgente:'Urgente'}[s]||s;
+}
+function formatDate(d) {
+  if(!d) return '';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+// ============================================================
+// OFÍCIOS
+// ============================================================
+function openNovoOficio(id=null) {
+  currentOficioId = id;
+  if(id) {
+    const o = oficios.find(x=>x.id===id);
+    document.getElementById('o-numero').value = o.numero;
+    document.getElementById('o-data').value = o.data;
+    document.getElementById('o-hora').value = o.hora;
+    document.getElementById('o-nome').value = o.nome;
+    document.getElementById('o-processo').value = o.processo||'';
+    document.getElementById('o-tipo').value = o.tipo||'Ofício';
+    document.getElementById('o-desc').value = o.desc||'';
+  } else {
+    document.getElementById('o-numero').value = '';
+    document.getElementById('o-data').value = today();
+    document.getElementById('o-hora').value = todayTime();
+    document.getElementById('o-nome').value = '';
+    document.getElementById('o-processo').value = '';
+    document.getElementById('o-tipo').value = 'Ofício';
+    document.getElementById('o-desc').value = '';
+  }
+  document.getElementById('modalOficio').classList.add('open');
+}
+function salvarOficio() {
+  const nome = document.getElementById('o-nome').value.trim();
+  const numero = document.getElementById('o-numero').value.trim();
+  if(!nome||!numero) { toast('Preencha nome e número do ofício','error'); return; }
+  const obj = {
+    id: currentOficioId || Date.now(),
+    numero, nome,
+    data: document.getElementById('o-data').value,
+    hora: document.getElementById('o-hora').value,
+    processo: document.getElementById('o-processo').value,
+    tipo: document.getElementById('o-tipo').value,
+    desc: document.getElementById('o-desc').value,
+    criadoEm: nowFull()
+  };
+  if(currentOficioId) {
+    const idx = oficios.findIndex(x=>x.id===currentOficioId);
+    oficios[idx] = obj;
+    toast('Ofício atualizado!','success');
+  } else {
+    oficios.unshift(obj);
+    toast('Ofício registrado!','success');
+  }
+  save(KEYS.oficios, oficios);
+  closeModal('modalOficio');
+  renderOficios();
+  updateBadges();
+  loadMemoryInfo();
+}
+function deleteOficio(id) {
+  if(!confirm('Excluir este ofício?')) return;
+  oficios = oficios.filter(x=>x.id!==id);
+  save(KEYS.oficios, oficios);
+  renderOficios();
+  updateBadges();
+  toast('Excluído','info');
+}
+function renderOficios() {
+  const search = (document.getElementById('oficioSearch')?.value||'').toLowerCase();
+  let list = oficios;
+  if(search) list = list.filter(o => o.nome?.toLowerCase().includes(search) || o.numero?.toLowerCase().includes(search) || o.processo?.toLowerCase().includes(search));
+
+  const todayStr = today();
+  const curMonth = today().slice(0,7);
+  document.getElementById('of-total').textContent = oficios.length;
+  document.getElementById('of-mes').textContent = oficios.filter(o=>o.data?.startsWith(curMonth)).length;
+  document.getElementById('of-hoje').textContent = oficios.filter(o=>o.data===todayStr).length;
+
+  const cont = document.getElementById('oficioGrid');
+  if(!list.length) {
+    cont.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📄</div><strong>Nenhum ofício encontrado</strong><p>Registre o primeiro ofício.</p></div>`;
+    return;
+  }
+  cont.innerHTML = list.map((o,i) => `
+    <div class="oficio-card">
+      <div class="oficio-top">
+        <div>
+          <div class="oficio-num">${o.tipo} ${o.numero}</div>
+          <div class="oficio-nome">${o.nome}</div>
+          <div class="oficio-proc">📁 ${o.processo||'Sem processo'}</div>
+          <div class="oficio-date">📅 ${formatDate(o.data)} ${o.hora}</div>
+          ${o.desc?`<div style="font-size:12px;color:var(--muted2);margin-top:6px;line-height:1.4">${o.desc.slice(0,80)}${o.desc.length>80?'...':''}</div>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <button class="act-btn edit" onclick="openNovoOficio(${o.id})">✏️ Editar</button>
+        <button class="act-btn del" onclick="deleteOficio(${o.id})">🗑️ Excluir</button>
+      </div>
+      <div class="oficio-counter">${String(oficios.length - i).padStart(2,'0')}</div>
+    </div>`).join('');
+}
+
+// ============================================================
+// DEMANDAS
+// ============================================================
+function openNovaDemanda(col='afazer') {
+  document.getElementById('d-titulo').value = '';
+  document.getElementById('d-prioridade').value = 'normal';
+  document.getElementById('d-coluna').value = col;
+  document.getElementById('d-prazo').value = '';
+  document.getElementById('d-desc').value = '';
+  document.getElementById('modalDemanda').classList.add('open');
+}
+function salvarDemanda() {
+  const titulo = document.getElementById('d-titulo').value.trim();
+  if(!titulo) { toast('Informe o título da demanda','error'); return; }
+  const obj = {
+    id: Date.now(),
+    titulo,
+    prioridade: document.getElementById('d-prioridade').value,
+    coluna: document.getElementById('d-coluna').value,
+    prazo: document.getElementById('d-prazo').value,
+    desc: document.getElementById('d-desc').value,
+    criadoEm: nowFull()
+  };
+  demandas.push(obj);
+  save(KEYS.demandas, demandas);
+  closeModal('modalDemanda');
+  renderDemandas();
+  loadMemoryInfo();
+  toast('Demanda criada!','success');
+}
+function moverDemanda(id, novaCol) {
+  const d = demandas.find(x=>x.id===id);
+  if(d) { d.coluna = novaCol; save(KEYS.demandas, demandas); renderDemandas(); }
+}
+function deleteDemanda(id) {
+  demandas = demandas.filter(x=>x.id!==id);
+  save(KEYS.demandas, demandas);
+  renderDemandas();
+  toast('Removida','info');
+}
+function renderDemandas() {
+  const cols = ['afazer','andamento','concluido'];
+  cols.forEach(col => {
+    const list = demandas.filter(d=>d.coluna===col);
+    document.getElementById('count-'+col).textContent = list.length;
+    const cont = document.getElementById('col-'+col);
+    cont.innerHTML = list.length ? list.map(d => `
+      <div class="demanda-card">
+        <div class="demanda-titulo">${d.titulo}</div>
+        ${d.desc?`<div style="font-size:12px;color:var(--muted2);line-height:1.4;margin-top:3px">${d.desc.slice(0,60)}${d.desc.length>60?'...':''}</div>`:''}
+        <div><span class="demanda-tag tag-${d.prioridade}">${d.prioridade}</span></div>
+        <div class="demanda-meta">
+          <span>${d.prazo?'📅 '+formatDate(d.prazo):d.criadoEm}</span>
+        </div>
+        <div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap">
+          ${col!=='afazer'?`<button class="act-btn edit" onclick="moverDemanda(${d.id},'afazer')" style="font-size:10px">← A Fazer</button>`:''}
+          ${col!=='andamento'?`<button class="act-btn edit" onclick="moverDemanda(${d.id},'andamento')" style="font-size:10px">⚡ Andamento</button>`:''}
+          ${col!=='concluido'?`<button class="act-btn edit" onclick="moverDemanda(${d.id},'concluido')" style="font-size:10px">✓ Concluir</button>`:''}
+          <button class="act-btn del" onclick="deleteDemanda(${d.id})" style="font-size:10px">🗑️</button>
+        </div>
+      </div>`).join('')
+      : `<div style="text-align:center;padding:24px 0;font-size:12px;color:var(--muted)">Vazio</div>`;
+  });
+}
+
+// ============================================================
+// CALCULADORA
+// ============================================================
+let calcExpr = '';
+let calcPrev = '';
+let calcOp2 = '';
+let calcNewNum = true;
+let calcCurrent = '0';
+
+function updateCalcDisplay() {
+  document.getElementById('calcResult').textContent = calcCurrent;
+  document.getElementById('calcExpr').textContent = calcExpr || '\u00a0';
+}
+function calcNum(n) {
+  if(calcNewNum) { calcCurrent = n; calcNewNum = false; }
+  else { if(calcCurrent === '0') calcCurrent = n; else calcCurrent += n; }
+  updateCalcDisplay();
+}
+function calcDot() {
+  if(calcNewNum) { calcCurrent = '0.'; calcNewNum = false; }
+  else if(!calcCurrent.includes('.')) calcCurrent += '.';
+  updateCalcDisplay();
+}
+function calcOp(op) {
+  if(calcOp2 && !calcNewNum) calcEquals(true);
+  calcPrev = calcCurrent;
+  calcOp2 = op;
+  calcExpr = `${calcCurrent} ${{'+':'+','-':'−','*':'×','/':'÷'}[op]}`;
+  calcNewNum = true;
+  updateCalcDisplay();
+}
+function calcEquals(silent=false) {
+  if(!calcOp2||!calcPrev) return;
+  const a = parseFloat(calcPrev), b = parseFloat(calcCurrent);
+  let result;
+  if(calcOp2==='+') result=a+b;
+  else if(calcOp2==='-') result=a-b;
+  else if(calcOp2==='*') result=a*b;
+  else if(calcOp2==='/') result= b===0?'Erro':a/b;
+  const expr = `${calcPrev} ${{'+':`+`,'-':'−','*':'×','/':'÷'}[calcOp2]} ${calcCurrent}`;
+  const res = typeof result === 'string' ? result : parseFloat(result.toFixed(10)).toString();
+  if(!silent) {
+    calcHistory.unshift({expr:`${expr} =`, val:res, time:now()});
+    if(calcHistory.length > 20) calcHistory.pop();
+    save(KEYS.calcHist, calcHistory);
+    renderCalcHist();
+  }
+  calcCurrent = res;
+  calcExpr = `${expr} =`;
+  calcOp2 = ''; calcPrev = '';
+  calcNewNum = true;
+  updateCalcDisplay();
+}
+function calcClear() { calcCurrent='0'; calcExpr=''; calcOp2=''; calcPrev=''; calcNewNum=true; updateCalcDisplay(); }
+function calcSign() { calcCurrent = (parseFloat(calcCurrent)*-1).toString(); updateCalcDisplay(); }
+function calcPercent() { calcCurrent = (parseFloat(calcCurrent)/100).toString(); updateCalcDisplay(); }
+function renderCalcHist() {
+  const cont = document.getElementById('calcHistList');
+  if(!calcHistory.length) { cont.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:20px 0">Nenhum cálculo</div>'; return; }
+  cont.innerHTML = calcHistory.map(h=>`<div class="calc-hist-item" onclick="calcCurrent='${h.val}';updateCalcDisplay()"><span class="calc-hist-expr">${h.expr}</span><span class="calc-hist-val">${h.val}</span></div>`).join('');
+}
+
+// Keyboard support for calculator
+document.addEventListener('keydown', e => {
+  const panel = document.getElementById('panel-calculadora');
+  if(!panel.classList.contains('active')) return;
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+  if('0123456789'.includes(e.key)) calcNum(e.key);
+  else if(e.key==='.') calcDot();
+  else if(e.key==='+') calcOp('+');
+  else if(e.key==='-') calcOp('-');
+  else if(e.key==='*') calcOp('*');
+  else if(e.key==='/') { e.preventDefault(); calcOp('/'); }
+  else if(e.key==='Enter'||e.key==='=') calcEquals();
+  else if(e.key==='Backspace') { calcCurrent=calcCurrent.slice(0,-1)||'0'; updateCalcDisplay(); }
+  else if(e.key==='Escape') calcClear();
+});
+
+// ============================================================
+// MODAL
+// ============================================================
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); });
+});
+
+// ============================================================
+// BADGES
+// ============================================================
+function updateBadges() {
+  document.getElementById('badge-atend').textContent = atendimentos.length;
+  document.getElementById('badge-ofic').textContent = oficios.length;
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg, type='info') {
+  const icons = {success:'✅',error:'❌',info:'ℹ️'};
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span class="t-icon">${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(()=>el.remove(), 3500);
+}
+</script>
+</body>
+</html>
